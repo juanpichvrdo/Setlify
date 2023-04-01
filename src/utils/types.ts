@@ -13,3 +13,8 @@ export interface SpotifyAuthResponse {
   expires_in: number;
   refresh_token: string;
 }
+
+export interface SetlistFMParams {
+  artistName: string;
+  p?: number;
+}
