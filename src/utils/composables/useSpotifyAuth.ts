@@ -6,13 +6,13 @@ import type { SpotifyAuthParams } from "@/utils/types";
 import { getAccessTokenFromSpotify } from "@/utils/api";
 import { redirectUrl } from "@/utils/helpers";
 
+const isAuthenticated = ref(false);
+
 export async function useSpotifyAuth() {
   const router = useRouter();
   const route = useRoute();
   const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
   const code = route?.query.code as string;
-
-  const isAuthenticated = ref(false);
 
   const spotifyToken = useLocalStorage("spotifyToken", "");
   isAuthenticated.value = !!spotifyToken.value;

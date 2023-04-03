@@ -25,17 +25,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { useTheme } from "vuetify";
+import { useThemeToggle } from "@/utils/composables/useThemeToggle";
 
-const theme = useTheme();
-
-const isDarkMode = ref(true);
-
-const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value;
-  theme.global.name.value = theme.global.current.value.dark ? "light" : "dark";
-};
+const { isDarkMode, toggleTheme } = useThemeToggle();
 </script>
 
 <style scoped></style>

@@ -3,10 +3,11 @@ import type {
   SpotifyAuthParams,
   SpotifyAuthResponse,
   SetlistFMParams,
+  SetlistResponse,
 } from "@/utils/types";
 
-// Third party CORS proxy to avoid CORS erros without spining my own backend
-const proxyUrl = "https://cors-anywhere.herokuapp.com/";
+// Third party CORS proxy to avoid CORS erros without spining my own
+const proxyUrl = "https://corsproxy.io/?";
 
 const spotifyAuthApi = axios.create({
   baseURL: "https://accounts.spotify.com/",
@@ -39,11 +40,13 @@ export async function getAccessTokenFromSpotify(
   return data;
 }
 
-export async function getSetlistsAPI(params: SetlistFMParams) {
+export async function getSetlistsAPI(
+  params: SetlistFMParams
+): Promise<SetlistResponse> {
   let data = [];
 
   try {
-    const response = await setlistFmApi.get(`/search/setlists`, { params });
+    const response = await setlistFmApi.get("/search/setlists?", { params });
 
     data = response.data;
   } catch (error) {
