@@ -19,8 +19,6 @@ export function useSpotifyAuth() {
 
   const { displaySnackbar } = useSnackbar();
 
-  console.log(redirectUrl);
-
   const loginToSpotify = async () => {
     try {
       const spotifyToken = localStorage.getItem("spotifyToken");
