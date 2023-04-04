@@ -16,77 +16,39 @@
       @on-setlist-search="searchSetlists"
     />
 
+    <div v-if="shouldShowNoResultsMessage" class="home__no-results">
+      <p>Couldn't find any setlists with this search.</p>
+    </div>
+
     <SetlistList
-      class="mt-8 mb-16"
       v-if="setlistsFormattedData"
+      class="mt-8 mb-16"
       :setlists="setlistsFormattedData"
     />
-
-    <!-- <v-btn
-      color="primary"
-      min-width="228"
-      size="x-large"
-      target="_blank"
-      variant="flat"
-      @click="onLoginToSpotify"
-    >
-      LOGIN TO SPOTIFY
-    </v-btn> -->
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from "vue";
-
-import format from "date-fns/format";
-import {
-  useSpotifyAuth,
-  // redirectToAuth,
-} from "@/utils/composables/useSpotifyAuth";
+import { useSpotifyAuth } from "@/utils/composables/useSpotifyAuth";
 import { useSetlists } from "@/utils/composables/useSetlists";
 import { useThemeToggle } from "@/utils/composables/useThemeToggle";
-
-import { convertToDate } from "@/utils/helpers";
-
-import type { SetlistResponse } from "@/utils/types";
-
 import Search from "@/components/Search.vue";
 import SetlistList from "@/components/SetlistList.vue";
 
 const { isDarkMode } = useThemeToggle();
+const { loginToSpotify } = useSpotifyAuth();
+const {
+  setlistsFormattedData,
+  getSetlists,
+  isLoading,
+  shouldShowNoResultsMessage,
+} = await useSetlists();
 
-await useSpotifyAuth();
-
-const setlistData = ref<SetlistResponse | null>(null);
-const { getSetlists, isLoading } = await useSetlists();
+await loginToSpotify();
 
 const searchSetlists = async (searchTerm: string) => {
-  const data = await getSetlists(searchTerm);
-  setlistData.value = data;
+  await getSetlists(searchTerm);
 };
-
-const setlistsFormattedData = computed(() => {
-  return setlistData.value?.setlist?.map((setlist) => {
-    const { artist, eventDate, id, url, venue, info } = setlist;
-
-    const dateObject = convertToDate(eventDate);
-    const formattedDate = format(dateObject, "MMMM do, y");
-
-    return {
-      artist,
-      eventDate: formattedDate,
-      id,
-      url,
-      venue,
-      info,
-      set: setlist.sets.set[0]?.song,
-    };
-  });
-});
-
-// const onLoginToSpotify = async () => {
-//   await redirectToAuth();
-// };
 </script>
 
 <style>
@@ -96,5 +58,11 @@ const setlistsFormattedData = computed(() => {
 
 .home__logo {
   margin-top: 15vh;
+}
+
+.home__no-results {
+  margin-top: 80px;
+  font-size: 24px;
+  text-align: center;
 }
 </style>

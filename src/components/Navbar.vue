@@ -2,7 +2,7 @@
   <v-toolbar prominent :elevation="8">
     <v-container>
       <v-row>
-        <v-toolbar-title>
+        <v-toolbar-title class="title-logo px-3">
           <router-link :to="{ name: 'Home' }">
             <v-img
               v-if="isDarkMode"
@@ -30,4 +30,9 @@ import { useThemeToggle } from "@/utils/composables/useThemeToggle";
 const { isDarkMode, toggleTheme } = useThemeToggle();
 </script>
 
-<style scoped></style>
+<style scoped>
+.title-logo {
+  max-width: fit-content;
+  margin-right: auto;
+}
+</style>

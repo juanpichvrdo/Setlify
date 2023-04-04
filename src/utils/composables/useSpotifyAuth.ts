@@ -1,86 +1,138 @@
 import { ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { useLocalStorage } from "@vueuse/core";
-
-import type { SpotifyAuthParams } from "@/utils/types";
-import { getAccessTokenFromSpotify } from "@/utils/api";
-import { redirectUrl } from "@/utils/helpers";
+import { useRoute } from "vue-router";
+import type { SpotifyAuthParams, SpotifyUser } from "@/utils/types";
+import { getAccessTokenFromSpotifyAPI, getSpotifyUserAPI } from "@/utils/api";
+import {
+  redirectUrl,
+  generateSpotifyCodeVerifier,
+  generateSpotifyCodeChallenge,
+} from "@/utils/helpers";
+import { useSnackbar } from "@/utils/composables/useSnackbar";
 
 const isAuthenticated = ref(false);
+const shouldOpenAlertOnSpotifyAuthError = ref(false);
 
-export async function useSpotifyAuth() {
-  const router = useRouter();
-  const route = useRoute();
+export function useSpotifyAuth() {
   const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+  const route = useRoute();
   const code = route?.query.code as string;
 
-  const spotifyToken = useLocalStorage("spotifyToken", "");
-  isAuthenticated.value = !!spotifyToken.value;
+  const { displaySnackbar } = useSnackbar();
 
-  if (code) {
-    if (!isAuthenticated.value) {
-      spotifyToken.value = await getAccessToken(clientId, code);
+  console.log(redirectUrl);
+
+  const loginToSpotify = async () => {
+    try {
+      const spotifyToken = localStorage.getItem("spotifyToken");
       isAuthenticated.value = !!spotifyToken;
+
+      if (code) {
+        if (!isAuthenticated.value) {
+          const spotifyToken = await getAccessToken(code);
+          localStorage.setItem("spotifyToken", spotifyToken);
+          isAuthenticated.value = !!spotifyToken;
+        }
+      }
+
+      const spotifyTokenExpireDate = localStorage.getItem(
+        "spotifyTokenExpireDate"
+      );
+      const isTokenExpired =
+        new Date().getTime() > parseInt(spotifyTokenExpireDate as string);
+
+      if (isTokenExpired) {
+        await refreshAccessToken();
+      }
+
+      const spotifyUserJson = localStorage.getItem("spotifyUser");
+      const spotifyUser: SpotifyUser = JSON.parse(spotifyUserJson as string);
+      if (isAuthenticated.value && !spotifyUser?.id) {
+        const spotifyUserData = await getSpotifyUserAPI();
+
+        localStorage.setItem("spotifyUser", JSON.stringify(spotifyUserData));
+      }
+    } catch (error) {
+      displaySnackbar(
+        "An error occurred while authenticating to Spotify.",
+        "red"
+      );
     }
-
-    if (isAuthenticated.value) {
-      router.push({ name: "Home" });
-    }
-  }
-
-  return { isAuthenticated };
-}
-
-export async function redirectToAuth() {
-  const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-  const verifier = generateCodeVerifier(128);
-  const challenge = await generateCodeChallenge(verifier);
-
-  localStorage.setItem("verifier", verifier);
-
-  const params = new URLSearchParams();
-  params.append("client_id", clientId);
-  params.append("response_type", "code");
-  params.append("redirect_uri", redirectUrl);
-  params.append("scope", "user-read-private user-read-email");
-  params.append("code_challenge_method", "S256");
-  params.append("code_challenge", challenge);
-
-  document.location = `https://accounts.spotify.com/authorize?${params.toString()}`;
-}
-
-export async function getAccessToken(clientId: string, code: string) {
-  const verifier = localStorage.getItem("verifier");
-
-  const params: SpotifyAuthParams = {
-    client_id: clientId,
-    grant_type: "authorization_code",
-    code,
-    redirect_uri: redirectUrl,
-    code_verifier: verifier!,
   };
 
-  const data = await getAccessTokenFromSpotify(params);
+  const redirectToAuth = async () => {
+    const verifier = generateSpotifyCodeVerifier(128);
+    const challenge = await generateSpotifyCodeChallenge(verifier);
 
-  return data.access_token;
-}
+    localStorage.setItem("verifier", verifier);
 
-function generateCodeVerifier(length: number) {
-  let text = "";
-  const possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const params = new URLSearchParams();
+    params.append("client_id", clientId);
+    params.append("response_type", "code");
+    params.append("redirect_uri", redirectUrl);
+    params.append(
+      "scope",
+      "playlist-modify-public playlist-modify-private user-read-private user-read-email"
+    );
+    params.append("code_challenge_method", "S256");
+    params.append("code_challenge", challenge);
 
-  for (let i = 0; i < length; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
-}
+    document.location = `https://accounts.spotify.com/authorize?${params.toString()}`;
+  };
 
-async function generateCodeChallenge(codeVerifier: string) {
-  const data = new TextEncoder().encode(codeVerifier);
-  const digest = await window.crypto.subtle.digest("SHA-256", data);
-  return btoa(String.fromCharCode.apply(null, [...new Uint8Array(digest)]))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  const getAccessToken = async (code: string) => {
+    const verifier = localStorage.getItem("verifier");
+
+    const params: SpotifyAuthParams = {
+      client_id: clientId,
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: redirectUrl,
+      code_verifier: verifier!,
+    };
+
+    const tokenData = await getAccessTokenFromSpotifyAPI(params);
+
+    const spotifyTokenExpireDate = new Date(
+      tokenData.expires_in * 1000 + new Date().getTime()
+    )
+      .getTime()
+      .toString();
+
+    localStorage.setItem("spotifyTokenExpireDate", spotifyTokenExpireDate);
+    localStorage.setItem("refreshToken", tokenData.refresh_token);
+
+    return tokenData.access_token;
+  };
+
+  const refreshAccessToken = async () => {
+    const refresh_token = localStorage.getItem("refreshToken") as string;
+
+    const params: SpotifyAuthParams = {
+      client_id: clientId,
+      grant_type: "refresh_token",
+      refresh_token,
+    };
+
+    const tokenData = await getAccessTokenFromSpotifyAPI(params);
+
+    const spotifyTokenExpireDate = new Date(
+      tokenData.expires_in * 1000 + new Date().getTime()
+    )
+      .getTime()
+      .toString();
+
+    localStorage.setItem("spotifyTokenExpireDate", spotifyTokenExpireDate);
+    localStorage.setItem("spotifyToken", tokenData.access_token);
+    localStorage.setItem("refreshToken", tokenData.refresh_token);
+
+    return tokenData;
+  };
+
+  return {
+    loginToSpotify,
+    redirectToAuth,
+    getAccessToken,
+    shouldOpenAlertOnSpotifyAuthError,
+    isAuthenticated,
+  };
 }

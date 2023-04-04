@@ -1,9 +1,10 @@
 export interface SpotifyAuthParams {
   client_id: string;
-  grant_type: "authorization_code";
-  code: string;
-  redirect_uri: "http://localhost:3000/";
-  code_verifier: string | null;
+  grant_type: "authorization_code" | "refresh_token";
+  refresh_token?: string;
+  code?: string;
+  redirect_uri?: string;
+  code_verifier?: string | null;
 }
 
 export interface SpotifyAuthResponse {
@@ -101,4 +102,124 @@ export interface Coords {
 export interface Country {
   code: string;
   name: string;
+}
+
+export interface GeneratePlaylistData {
+  userId: string;
+  songs: string[];
+  playlistTitle: string;
+  isPublic: boolean;
+  artistName: string;
+}
+
+export interface SpotifyPlaylist {
+  collaborative: boolean;
+  description: null;
+  external_urls: ExternalUrls;
+  followers: Followers;
+  href: string;
+  id: string;
+  images: any[];
+  name: string;
+  owner: Owner;
+  primary_color: null;
+  public: boolean;
+  snapshot_id: string;
+  tracks: Tracks;
+  type: string;
+  uri: string;
+}
+
+export interface Followers {
+  href: null;
+  total: number;
+}
+
+export interface Owner {
+  display_name: string;
+  external_urls: ExternalUrls;
+  href: string;
+  id: string;
+  type: string;
+  uri: string;
+}
+
+export interface Tracks {
+  href: string;
+  items: any[];
+  limit: number;
+  next: null;
+  offset: number;
+  previous: null;
+  total: number;
+}
+
+export interface SpotifyUser {
+  country: string;
+  display_name: string;
+  email: string;
+  external_urls: ExternalUrls;
+  href: string;
+  id: string;
+  images: Image[];
+  product: string;
+  type: string;
+  uri: string;
+}
+
+export interface SpotifyTrack {
+  album: Album;
+  artists: Artist[];
+  duration_ms: number;
+  explicit: boolean;
+  external_urls: ExternalUrls;
+  href: string;
+  id: string;
+  name: string;
+  popularity: number;
+  preview_url: string;
+  track_number: number;
+  type: string;
+  uri: string;
+}
+
+export interface Album {
+  album_group: string;
+  album_type: string;
+  artists: Artist[];
+  available_markets: string[];
+  external_urls: ExternalUrls;
+  href: string;
+  id: string;
+  images: Image[];
+  is_playable: boolean;
+  name: string;
+  release_date: Date;
+  release_date_precision: string;
+  total_tracks: number;
+  type: string;
+  uri: string;
+}
+
+export interface Image {
+  height: null;
+  url: string;
+  width: null;
+}
+
+export interface Artist {
+  external_urls: ExternalUrls;
+  href: string;
+  id: string;
+  name: string;
+  type: string;
+  uri: string;
+}
+
+export interface ExternalUrls {
+  spotify: string;
+}
+
+export interface ExternalIDS {
+  isrc: string;
 }

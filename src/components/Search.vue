@@ -8,9 +8,10 @@
         label="Search by artist"
         append-inner-icon="mdi-magnify"
         single-line
-        hide-details
+        persistent-hint
+        hint="Convert setlists to playlists."
         @click:append-inner="onSearch"
-      ></v-text-field>
+      />
     </v-form>
   </div>
 </template>
