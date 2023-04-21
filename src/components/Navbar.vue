@@ -1,5 +1,5 @@
 <template>
-  <v-toolbar prominent :elevation="8">
+  <v-toolbar :elevation="8">
     <v-container>
       <v-row>
         <v-toolbar-title class="title-logo px-3">
@@ -19,6 +19,9 @@
             :icon="isDarkMode ? 'mdi-weather-night' : 'mdi-weather-sunny'"
           ></v-icon>
         </v-btn>
+        <v-btn v-if="isAuthenticated" @click="logoutFromSpotify">
+          Logout
+        </v-btn>
       </v-row>
     </v-container>
   </v-toolbar>
@@ -26,8 +29,15 @@
 
 <script setup lang="ts">
 import { useThemeToggle } from "@/utils/composables/useThemeToggle";
+import { useSpotifyAuth } from "@/utils/composables/useSpotifyAuth";
 
 const { isDarkMode, toggleTheme } = useThemeToggle();
+const { logout, isAuthenticated } = useSpotifyAuth();
+
+const logoutFromSpotify = () => {
+  logout();
+  isAuthenticated.value = false;
+};
 </script>
 
 <style scoped>

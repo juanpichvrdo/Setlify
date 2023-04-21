@@ -126,10 +126,18 @@ export function useSpotifyAuth() {
     return tokenData;
   };
 
+  const logout = () => {
+    localStorage.removeItem("spotifyTokenExpireDate");
+    localStorage.removeItem("spotifyToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("spotifyUser");
+  };
+
   return {
     loginToSpotify,
     redirectToAuth,
     getAccessToken,
+    logout,
     shouldOpenAlertOnSpotifyAuthError,
     isAuthenticated,
   };
